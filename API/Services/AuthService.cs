@@ -45,13 +45,24 @@ namespace API.Services
             if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email))
                 return null;
 
+            // Tạo family mới
+            var family = new Family
+            {
+                Name = registerDto.FamilyName,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Families.Add(family);
+            await _context.SaveChangesAsync();
+
+            // Tạo user với role Parent
             var user = new User
             {
                 FullName = registerDto.FullName,
                 Email = registerDto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
-                Role = registerDto.Role,
-                FamilyId = registerDto.FamilyId,
+                Role = "Parent", // Người đăng ký luôn là Parent
+                FamilyId = family.Id,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
