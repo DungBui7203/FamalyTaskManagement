@@ -1,0 +1,39 @@
+﻿@model Web.Models.ReportViewModel
+@{
+    ViewData["Title"] = "Report";
+}
+<div class="container login-container">
+    <div class="login-card w-100" style="max-width:900px;">
+        <div class="login-header">
+            <h2>Family Task Report</h2>
+            <div class="subtitle">Overview of family members' tasks</div>
+        </div>
+        <div class="login-body">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Assigned</th>
+                        <th>In Progress</th>
+                        <th>Done</th>
+                        <th>On Time</th>
+                        <th>Late</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Report)
+                    {
+                        <tr>
+                            <td>@item.FullName</td>
+                            <td>@item.AssignedCount</td>
+                            <td>@item.InProgressCount</td>
+                            <td>@item.DoneCount</td>
+                            <td>@item.OnTimeCount</td>
+                            <td>@item.LateCount</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
