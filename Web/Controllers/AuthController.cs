@@ -64,5 +64,42 @@ namespace Web.Controllers
             HttpContext.Session.Clear();
             return RedirectToAction("Login");
         }
+
+        [HttpGet]
+        public IActionResult Register()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            try
+            {
+                var result = await _apiService.RegisterAsync(model);
+
+                if (result != null)
+                {
+                    HttpContext.Session.SetString("Token", result.Token);
+                    HttpContext.Session.SetString("UserName", result.FullName);
+                    HttpContext.Session.SetString("Role", result.Role);
+                    HttpContext.Session.SetString("UserId", result.UserId.ToString());
+
+                    _apiService.SetAuthToken(result.Token);
+                    return RedirectToAction("Index", "Task");
+                }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", $"Registration error: {ex.Message}");
+                return View(model);
+            }
+
+            ModelState.AddModelError("", "Email already exists");
+            return View(model);
+        }
     }
 }
