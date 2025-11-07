@@ -1,0 +1,80 @@
+﻿@model Web.Models.Task.TaskViewModel
+@{
+    ViewData["Title"] = "Create Task";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-plus me-2"></i>Create New Task</h3>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label"></label>
+                            <input asp-for="Title" class="form-control" placeholder="Enter task title" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label"></label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Task description (optional)"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Category" class="form-label"></label>
+                                    <input asp-for="Category" class="form-control" placeholder="e.g., Household, Study" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Priority" class="form-label"></label>
+                                    <select asp-for="Priority" class="form-select">
+                                        <option value="Low">Low</option>
+                                        <option value="Medium" selected>Medium</option>
+                                        <option value="High">High</option>
+                                        <option value="Critical">Critical</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="DueDate" class="form-label"></label>
+                            <input asp-for="DueDate" type="datetime-local" class="form-control" />
+                            <span asp-validation-for="DueDate" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Assign to Members</label>
+                            @foreach (var member in ViewBag.FamilyMembers as List<Web.Models.Task.UserViewModel>)
+                            {
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="AssigneeIds" value="@member.Id" id="member_@member.Id">
+                                    <label class="form-check-label" for="member_@member.Id">
+                                        @member.FullName (@member.Role)
+                                    </label>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Create Task
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to List
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

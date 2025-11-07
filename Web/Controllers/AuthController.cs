@@ -38,10 +38,13 @@ namespace Web.Controllers
                     HttpContext.Session.SetString("Token", result.Token);
                     HttpContext.Session.SetString("UserName", result.FullName);
                     HttpContext.Session.SetString("Role", result.Role);
+                    HttpContext.Session.SetString("UserId", result.UserId.ToString());
 
                     _apiService.SetAuthToken(result.Token);
-
-                    return RedirectToAction("Index", "Home");
+                    if (result.Role == "Parent")
+                        return RedirectToAction("Index", "Task");
+                    else
+                        return RedirectToAction("Index", "MyTask");
                 }
             }
             catch (Exception ex)

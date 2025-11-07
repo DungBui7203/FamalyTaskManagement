@@ -29,6 +29,21 @@ app.UseRouting();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/Task") ||
+        context.Request.Path.StartsWithSegments("/Home"))
+    {
+        var token = context.Session.GetString("Token");
+        if (string.IsNullOrEmpty(token))
+        {
+            context.Response.Redirect("/Auth/Login");
+            return;
+        }
+    }
+    await next();
+});
+
 
 app.UseCors("AllowWeb");
 
