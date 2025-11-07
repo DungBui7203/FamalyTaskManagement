@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Web.Models;
 using Web.Models.Task;
+using Web.Models.User;
 
 namespace Web.Services
 {
@@ -134,6 +135,84 @@ namespace Web.Services
         {
             var response = await _httpClient.PostAsync($"/api/tasks/{taskId}/verify", null);
             return response.IsSuccessStatusCode;
+        }
+
+        public async Task<List<UserViewModel>?> GetUsersAsync()
+        {
+            var response = await _httpClient.GetAsync("/api/users");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<List<UserViewModel>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            return null;
+        }
+
+        public async Task<UserViewModel?> GetUserAsync(long id)
+        {
+            var response = await _httpClient.GetAsync($"/api/users/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<UserViewModel>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            return null;
+        }
+
+        public async Task<UserViewModel?> CreateUserAsync(CreateUserViewModel user)
+        {
+            var json = JsonSerializer.Serialize(user);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync("/api/users", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseJson = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<UserViewModel>(responseJson, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            return null;
+        }
+
+        public async Task<bool> UpdateUserAsync(long id, UpdateUserViewModel user)
+        {
+            var json = JsonSerializer.Serialize(user);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = await _httpClient.PutAsync($"/api/users/{id}", content);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<bool> DeleteUserAsync(long id)
+        {
+            var response = await _httpClient.DeleteAsync($"/api/users/{id}");
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<AuthResponse?> RegisterAsync(RegisterViewModel model)
+        {
+            var json = JsonSerializer.Serialize(model);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("/api/auth/register", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<AuthResponse>(responseContent, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+
+            return null;
         }
 
     }
