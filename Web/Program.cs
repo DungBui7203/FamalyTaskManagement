@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddSession();
 builder.Services.AddHttpClient<ApiService>();
+builder.Services.AddHttpClient<ProfileService>();
 
 builder.Services.AddCors(options =>
 {

@@ -1,0 +1,77 @@
+﻿@model Web.Views.ProfileViewModel
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-user-circle me-2"></i>Thông tin cá nhân</h2>
+                <div>
+                    <a asp-action="Edit" class="btn btn-primary me-2">
+                        <i class="fas fa-edit me-2"></i>Chỉnh sửa
+                    </a>
+                    <a asp-action="ChangePassword" class="btn btn-outline-primary">
+                        <i class="fas fa-key me-2"></i>Đổi mật khẩu
+                    </a>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Thông tin chi tiết</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <strong>Họ và tên:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    @Model.FullName
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <strong>Email:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    @Model.Email
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <strong>Vai trò:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    <span class="badge bg-@(Model.Role == "Parent" ? "primary" : "secondary") fs-6">
+                                        @Model.Role
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-3">
+                                    <strong>Ngày tham gia:</strong>
+                                </div>
+                                <div class="col-sm-9">
+                                    @Model.CreatedAt?.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-circle fa-5x text-primary mb-3"></i>
+                            <h5>@Model.FullName</h5>
+                            <p class="text-muted">@Model.Role</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
