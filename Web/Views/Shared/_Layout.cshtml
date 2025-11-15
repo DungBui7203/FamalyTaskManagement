@@ -18,6 +18,8 @@
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 1030;
         }
 
         .navbar-brand {
@@ -54,6 +56,8 @@
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             min-height: calc(100vh - 200px);
+            position: relative;
+            z-index: 1;
         }
 
         .card {
@@ -130,6 +134,33 @@
         .navbar-text {
             color: #667eea !important;
             font-weight: 500;
+        }
+
+        .dropdown-menu {
+            z-index: 9999 !important;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            margin-top: 8px;
+            position: absolute !important;
+        }
+
+        .dropdown-item {
+            border-radius: 8px;
+            margin: 2px 8px;
+            transition: all 0.3s ease;
+        }
+
+            .dropdown-item:hover {
+                background: rgba(102, 126, 234, 0.1);
+                color: #667eea;
+            }
+
+        .dropdown-divider {
+            margin: 8px 0;
+            border-color: rgba(102, 126, 234, 0.2);
         }
 
         .floating-shapes {
@@ -248,18 +279,32 @@
                     </ul>
 
                     <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <span class="navbar-text me-3">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fas fa-user-circle me-1"></i>
                                 @Context.Session.GetString("UserName")
-                            </span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Auth" asp-action="Logout">
-                                <i class="fas fa-sign-out-alt me-1"></i>Logout
                             </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Profile" asp-action="Index">
+                                        <i class="fas fa-user me-2"></i>Thông tin cá nhân
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Profile" asp-action="ChangePassword">
+                                        <i class="fas fa-key me-2"></i>Đổi mật khẩu
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" asp-controller="Auth" asp-action="Logout">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
+
                 </div>
             </div>
         </nav>
