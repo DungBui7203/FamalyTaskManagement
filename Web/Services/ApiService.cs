@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Web.Models;
+using Web.Models.Profile;
 using Web.Models.Task;
 using Web.Models.User;
 
@@ -134,6 +135,54 @@ namespace Web.Services
         public async Task<bool> VerifyTaskAsync(long taskId)
         {
             var response = await _httpClient.PostAsync($"/api/tasks/{taskId}/verify", null);
+            return response.IsSuccessStatusCode;
+        }
+        public async Task<ProfileUserViewModel?> GetMyProfileAsync()
+        {
+            var response = await _httpClient.GetAsync("/api/profile/me");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<ProfileUserViewModel>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            return null;
+        }
+
+        public async Task<FamilyViewModel?> GetMyFamilyAsync()
+        {
+            var response = await _httpClient.GetAsync("/api/profile/family");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<FamilyViewModel>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            return null;
+        }
+
+        public async Task<bool> ChangePasswordAsync(ChangePasswordViewModel model)
+        {
+            var content = new StringContent(JsonSerializer.Serialize(model), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync("/api/profile/change-password", content);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<List<TaskReportItem>?> GetTaskReportAsync()
+        {
+            var response = await _httpClient.GetAsync("/api/report");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<List<TaskReportItem>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            return null;
+        }
+        public async Task<bool> UpdateProfileAsync(ProfileUserViewModel model)
+        {
+            var dto = new { model.FullName, model.Email };
+            var json = JsonSerializer.Serialize(dto);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PatchAsync("/api/profile/me", content);
             return response.IsSuccessStatusCode;
         }
 

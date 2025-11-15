@@ -1,98 +1,119 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Net.Http;
+using Web.Models.Profile;
 using Web.Services;
-using Web.Views;
 
 namespace Web.Controllers
 {
     public class ProfileController : Controller
     {
-        private readonly ProfileService _profileService;
-
-        public ProfileController(ProfileService profileService)
+        private readonly ApiService _apiService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public ProfileController(ApiService apiService, IHttpContextAccessor httpContextAccessor)
         {
-            _profileService = profileService;
-        }
+            _apiService = apiService;
+            _httpContextAccessor = httpContextAccessor;
 
-        private void SetAuthToken()
-        {
-            var token = HttpContext.Session.GetString("Token");
+            // TỰ ĐỘNG GẮN TOKEN TỪ SESSION VÀO HttpClient
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("Token");
             if (!string.IsNullOrEmpty(token))
-                _profileService.SetAuthToken(token);
+            {
+                _apiService.SetAuthToken(token);
+            }
         }
 
         public async Task<IActionResult> Index()
         {
-            SetAuthToken();
-            var profile = await _profileService.GetProfileAsync();
-
-            if (profile == null)
-                return RedirectToAction("Login", "Auth");
-
-            return View(profile);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Edit()
-        {
-            SetAuthToken();
-            var profile = await _profileService.GetProfileAsync();
-
-            if (profile == null)
-                return RedirectToAction("Login", "Auth");
-
-            var model = new UpdateProfileViewModel
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("Token");
+            if (string.IsNullOrEmpty(token))
             {
-                FullName = profile.FullName,
-                Email = profile.Email
+                return RedirectToAction("Login", "Auth");
+            }
+
+            // Gọi song song 2 API
+            var userTask = _apiService.GetMyProfileAsync();
+            var familyTask = _apiService.GetMyFamilyAsync();
+
+            await Task.WhenAll(userTask, familyTask);
+
+            var user = await userTask;
+            var family = await familyTask;
+
+            // Nếu API lỗi (401, 500, v.v.) → trả null → chuyển hướng login
+            if (user == null || family == null)
+            {
+                TempData["Error"] = "Không thể tải thông tin. Vui lòng đăng nhập lại.";
+                return RedirectToAction("Login", "Auth");
+            }
+
+            var model = new ProfileViewModel
+            {
+                User = user,
+                Family = family
             };
 
             return View(model);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Edit(UpdateProfileViewModel model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            SetAuthToken();
-            var result = await _profileService.UpdateProfileAsync(model);
-
-            if (result != null)
-            {
-                HttpContext.Session.SetString("UserName", result.FullName);
-                TempData["Success"] = "Thông tin cá nhân đã được cập nhật!";
-                return RedirectToAction(nameof(Index));
-            }
-
-            ModelState.AddModelError("", "Không thể cập nhật thông tin. Email có thể đã tồn tại.");
-            return View(model);
-        }
-
-        [HttpGet]
-        public IActionResult ChangePassword()
-        {
-            return View(new ChangePasswordViewModel());
-        }
-
-        [HttpPost]
         public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
         {
             if (!ModelState.IsValid)
-                return View(model);
-
-            SetAuthToken();
-            var (success, errorMessage) = await _profileService.ChangePasswordAsync(model);
-
-            if (success)
             {
-                TempData["Success"] = "Mật khẩu đã được thay đổi thành công!";
-                return RedirectToAction(nameof(Index));
+                return View("Index", await BuildViewModel());
             }
 
-            ModelState.AddModelError("CurrentPassword", errorMessage ?? "Mật khẩu hiện tại không đúng.");
-            return View(model);
-        }
+            // Gắn lại token trước khi gọi API
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("Token");
+            if (!string.IsNullOrEmpty(token))
+            {
+                _apiService.SetAuthToken(token);
+            }
 
+            var success = await _apiService.ChangePasswordAsync(model);
+
+            TempData[success ? "Success" : "Error"] = success
+                ? "Đổi mật khẩu thành công!"
+                : "Đổi mật khẩu thất bại. Vui lòng thử lại.";
+
+            return RedirectToAction("Index");
+        }
+        private async Task<ProfileViewModel> BuildViewModel()
+        {
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("Token");
+            if (!string.IsNullOrEmpty(token))
+            {
+                _apiService.SetAuthToken(token);
+            }
+
+            var userTask = _apiService.GetMyProfileAsync();
+            var familyTask = _apiService.GetMyFamilyAsync();
+            await Task.WhenAll(userTask, familyTask);
+
+            return new ProfileViewModel
+            {
+                User = await userTask ?? new ProfileUserViewModel(),
+                Family = await familyTask ?? new FamilyViewModel()
+            };
+        }
+        [HttpPost]
+        public async Task<IActionResult> UpdateProfile(ProfileUserViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View("Index", await BuildViewModel());
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("Token");
+            if (!string.IsNullOrEmpty(token))
+                _apiService.SetAuthToken(token);
+
+            // DÙNG _apiService ĐỂ GỌI API → KHÔNG CẦN _httpClient
+            var success = await _apiService.UpdateProfileAsync(model);
+
+            TempData[success ? "Success" : "Error"] = success
+                ? "Cập nhật hồ sơ thành công!"
+                : "Cập nhật thất bại. Vui lòng thử lại.";
+
+            return RedirectToAction("Index");
+        }
     }
 }
