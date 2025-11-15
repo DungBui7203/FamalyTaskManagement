@@ -8,7 +8,6 @@
     <div class="container py-5">
         <div class="row justify-content-center">
             <div class="col-lg-11">
-
                 @* Thông báo lỗi *@
                 @if (TempData["Error"] != null)
                 {
@@ -27,23 +26,31 @@
 
                     <div class="card-body p-5">
 
-                        @* 1. Biểu đồ: Thành viên nhiều nhiệm vụ nhất *@
+                        @* 1. BAR CHART *@
                         <div class="chart-section mb-5">
                             <h5 class="chart-title"><i class="fas fa-medal text-warning me-2"></i>Thành viên có nhiều nhiệm vụ nhất</h5>
-                            <div class="chart-wrapper bg-light p-3 rounded-3 shadow-sm">
+                            <div class="chart-wrapper bg-light p-3 rounded-3 shadow-sm position-relative">
                                 <canvas id="mostTasksChart" height="120"></canvas>
+                                <div id="noDataBar" class="position-absolute top-50 start-50 translate-middle text-center text-muted" style="display:none;">
+                                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                    <div>Chưa có dữ liệu</div>
+                                </div>
                             </div>
                         </div>
 
-                        @* 2. Biểu đồ: Trạng thái nhiệm vụ *@
+                        @* 2. DOUGHNUT CHART *@
                         <div class="chart-section mb-5">
                             <h5 class="chart-title"><i class="fas fa-pie-chart text-info me-2"></i>Trạng thái nhiệm vụ toàn gia đình</h5>
-                            <div class="chart-wrapper bg-light p-3 rounded-3 shadow-sm d-flex justify-content-center">
-                                <canvas id="taskStatusChart" width="300" height="300"></canvas>
+                            <div class="chart-wrapper bg-light p-3 rounded-3 shadow-sm d-flex justify-content-center position-relative">
+                                <canvas id="taskStatusChart" width="250" height="250"></canvas>
+                                <div id="noDataPie" class="position-absolute top-50 start-50 translate-middle text-center text-muted" style="display:none;">
+                                    <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                    <div>Chưa có dữ liệu</div>
+                                </div>
                             </div>
                         </div>
 
-                        @* 3. Bảng chi tiết *@
+                        @* 3. BẢNG CHI TIẾT *@
                         <div class="table-section mb-5">
                             <h5 class="chart-title mb-3"><i class="fas fa-table text-success me-2"></i>Chi tiết theo thành viên</h5>
                             <div class="table-responsive">
@@ -60,7 +67,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @if (!Model.MemberStats.Any())
+                                        @if (!Model.MemberStats?.Any() ?? true)
                                         {
                                             <tr>
                                                 <td colspan="7" class="text-center py-4 text-muted">
@@ -76,9 +83,9 @@
                                                     <td>
                                                         <div class="d-flex align-items-center">
                                                             <div class="avatar-sm me-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
-                                                                @(string.IsNullOrEmpty(stat.FullName) ? "?" : stat.FullName[0].ToString().ToUpper())
+                                                                @(string.IsNullOrWhiteSpace(stat.FullName) ? "?" : char.ToUpper(stat.FullName[0]).ToString())
                                                             </div>
-                                                            <strong>@stat.FullName</strong>
+                                                            <strong>@(stat.FullName ?? "Ẩn danh")</strong>
                                                         </div>
                                                     </td>
                                                     <td class="text-center fw-bold">@stat.AssignedCount</td>
@@ -95,10 +102,10 @@
                             </div>
                         </div>
 
-                        @* 4. Nhiệm vụ quá hạn *@
+                        @* 4. QUÁ HẠN *@
                         <div class="overdue-section">
                             <h5 class="chart-title mb-3"><i class="fas fa-bell text-danger me-2"></i>Nhiệm vụ quá hạn</h5>
-                            @if (!Model.OverdueGroups.Any())
+                            @if (!Model.OverdueGroups?.Any() ?? true)
                             {
                                 <div class="alert alert-success rounded-3 p-3 d-flex align-items-center">
                                     <i class="fas fa-check-circle me-2"></i>
@@ -111,7 +118,7 @@
                                     @foreach (var group in Model.OverdueGroups)
                                     {
                                         var collapseId = $"overdue-{group.AssigneeId}";
-                                        <div class="accordion-item border-start border-danger border-4">
+                                        <div class="accordion-item border-start border-danger border-4 mb-3">
                                             <h2 class="accordion-header">
                                                 <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId">
                                                     <i class="fas fa-user-clock text-danger me-2"></i>
@@ -140,7 +147,6 @@
                             }
                         </div>
 
-                        @* Nút quay lại *@
                         <div class="text-center mt-5">
                             <a asp-controller="Task" asp-action="Index" class="btn btn-outline-primary px-4">
                                 <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
@@ -157,79 +163,27 @@
     :root {
         --primary: #667eea;
         --secondary: #764ba2;
-        --success: #28a745;
-        --warning: #ffc107;
-        --danger: #dc3545;
-        --info: #17a2b8;
-        --light: #f8f9fa;
-        --dark: #343a40;
         --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        --shadow: 0 10px 30px rgba(0,0,0,0.1);
-        --radius: 1.2rem;
-    }
-
-    .report-container {
-        min-height: 100vh;
-        background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
-        font-family: 'Segoe UI', sans-serif;
     }
 
     .report-card {
-        border-radius: var(--radius);
+        border-radius: 1.2rem;
         overflow: hidden;
-        background: white;
     }
 
     .report-header {
         background: var(--gradient);
-        padding: 2.5rem 1rem;
-    }
-
-        .report-header h2 {
-            font-weight: 700;
-            font-size: 1.8rem;
-        }
-
-    .chart-section, .table-section, .overdue-section {
-        margin-bottom: 2.5rem;
     }
 
     .chart-title {
         color: var(--primary);
         font-weight: 600;
-        font-size: 1.1rem;
-        display: flex;
-        align-items: center;
     }
 
     .chart-wrapper {
-        border-radius: 1rem;
-        overflow: hidden;
+        min-height: 300px;
+        position: relative;
     }
-
-    .table-modern {
-        border-collapse: separate;
-        border-spacing: 0 0.5rem;
-    }
-
-        .table-modern thead th {
-            background: #e3f2fd;
-            color: var(--primary);
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-        }
-
-        .table-modern tbody tr {
-            background: #f8f9fa;
-            transition: all 0.2s;
-        }
-
-            .table-modern tbody tr:hover {
-                background: #e3f2fd;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            }
 
     .avatar-sm {
         width: 36px;
@@ -238,98 +192,79 @@
         font-weight: bold;
     }
 
-    .accordion-item {
-        border: none;
-        border-radius: 0.75rem;
-        margin-bottom: 0.75rem;
-        overflow: hidden;
+    .table-modern tbody tr {
+        background: #f8f9fa;
     }
 
-    .accordion-button {
-        background: #fdfdfd;
-        font-weight: 600;
-    }
-
-        .accordion-button:not(.collapsed) {
-            background: var(--gradient);
-            color: white;
+        .table-modern tbody tr:hover {
+            background: #e3f2fd;
         }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const memberStats = @Html.Raw(JsonSerializer.Serialize(Model.MemberStats));
+        // Serialize với camelCase để JS đọc đúng
+        const memberStats = @Html.Raw(JsonSerializer.Serialize(
+            Model.MemberStats,
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }
+            ));
 
-        // Nếu không có dữ liệu
+        console.log('MemberStats (camelCase):', memberStats); // DEBUG
+
+        const showNoData = (id) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'block';
+        };
+
         if (!memberStats || memberStats.length === 0) {
-            document.querySelectorAll('canvas').forEach(canvas => {
-                const ctx = canvas.getContext('2d');
-                ctx.font = '16px Arial';
-                ctx.fillStyle = '#999';
-                ctx.textAlign = 'center';
-                ctx.fillText('Chưa có dữ liệu', canvas.width / 2, canvas.height / 2);
-            });
+            showNoData('noDataBar');
+            showNoData('noDataPie');
             return;
         }
 
-        // === BAR CHART: Thành viên nhiều task nhất ===
-        const mostTasksCtx = document.getElementById('mostTasksChart').getContext('2d');
-        new Chart(mostTasksCtx, {
+        // BAR CHART
+        const barCtx = document.getElementById('mostTasksChart').getContext('2d');
+        new Chart(barCtx, {
             type: 'bar',
             data: {
                 labels: memberStats.map(s => s.fullName || 'Ẩn danh'),
                 datasets: [{
                     label: 'Số nhiệm vụ',
-                    data: memberStats.map(s => s.assignedCount),
+                    data: memberStats.map(s => s.assignedCount || 0),
                     backgroundColor: 'rgba(102, 126, 234, 0.8)',
                     borderColor: '#764ba2',
                     borderWidth: 2,
-                    borderRadius: 6,
-                    borderSkipped: false
+                    borderRadius: 6
                 }]
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { callbacks: { label: ctx => `${ctx.raw} nhiệm vụ` } }
-                },
+                plugins: { legend: { display: false } },
                 scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: { stepSize: 1, font: { size: 12 } },
-                        grid: { color: 'rgba(0,0,0,0.05)' }
-                    },
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
                     x: { grid: { display: false } }
                 }
             }
         });
 
-        // === PIE CHART: Trạng thái task ===
-        const totalPending = memberStats.reduce((s, x) => s + x.pendingCount, 0);
-        const totalInProgress = memberStats.reduce((s, x) => s + x.inProgressCount, 0);
-        const totalDone = memberStats.reduce((s, x) => s + x.doneCount, 0);
-
-        const taskStatusCtx = document.getElementById('taskStatusChart').getContext('2d');
-        new Chart(taskStatusCtx, {
+        // DOUGHNUT CHART
+        const total = (key) => memberStats.reduce((acc, s) => acc + (s[key] || 0), 0);
+        const pieCtx = document.getElementById('taskStatusChart').getContext('2d');
+        new Chart(pieCtx, {
             type: 'doughnut',
             data: {
                 labels: ['Chờ xử lý', 'Đang thực hiện', 'Đã hoàn thành'],
                 datasets: [{
-                    data: [totalPending, totalInProgress, totalDone],
+                    data: [total('pendingCount'), total('inProgressCount'), total('doneCount')],
                     backgroundColor: ['#ffc107', '#fd7e14', '#28a745'],
                     borderColor: '#fff',
-                    borderWidth: 3,
-                    hoverOffset: 8
+                    borderWidth: 3
                 }]
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: { position: 'bottom', labels: { padding: 20, font: { size: 13 } } },
-                    tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}` } }
-                },
+                plugins: { legend: { position: 'bottom' } },
                 cutout: '65%'
             }
         });
