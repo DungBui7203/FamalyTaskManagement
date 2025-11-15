@@ -65,12 +65,32 @@
                                     </small>
                                 </div>
 
-                                <div class="mb-2">
-                                    <small class="text-muted">
-                                        <i class="fas fa-user me-1"></i>
-                                        Assigned: @string.Join(", ", task.AssigneeNames)
-                                    </small>
-                                </div>
+                                @if (task.Assignments != null && task.Assignments.Any())
+                                {
+                                    <div class="mb-2">
+                                        <small class="text-muted d-block mb-1">
+                                            <i class="fas fa-users me-1"></i>Assignment Status:
+                                        </small>
+                                        @foreach (var assignment in task.Assignments)
+                                        {
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span class="small">@assignment.AssigneeName</span>
+                                                <span class="badge bg-@GetStatusColor(assignment.Status) small">
+                                                    @assignment.Status
+                                                </span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="mb-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-user me-1"></i>
+                                            Assigned: @string.Join(", ", task.AssigneeNames)
+                                        </small>
+                                    </div>
+                                }
                             </div>
                             <div class="card-footer">
                                 @{
@@ -88,28 +108,42 @@
                                 }
                                 else if (userRole != "Parent")
                                 {
-                                    <!-- Giữ nguyên logic cũ cho Member -->
-                                    <div class="btn-group w-100" role="group">
-                                        @if (task.Status == "Pending")
-                                        {
-                                            <form asp-action="UpdateStatus" method="post" class="d-inline">
-                                                <input type="hidden" name="id" value="@task.Id" />
-                                                <input type="hidden" name="status" value="InProgress" />
-                                                <button type="submit" class="btn btn-sm btn-warning">Start</button>
-                                            </form>
-                                        }
-                                        @if (task.Status == "InProgress")
-                                        {
-                                            <form asp-action="UpdateStatus" method="post" class="d-inline">
-                                                <input type="hidden" name="id" value="@task.Id" />
-                                                <input type="hidden" name="status" value="Done" />
-                                                <button type="submit" class="btn btn-sm btn-success">Complete</button>
-                                            </form>
-                                        }
-                                    </div>
+                                    
+                                    var currentUserId = long.Parse(Context.Session.GetString("UserId") ?? "0");
+                                    var myAssignment = task.Assignments?.FirstOrDefault(a => a.AssigneeId == currentUserId);
+                                    
+                                    
+                                    @if (myAssignment != null)
+                                    {
+                                        <div class="btn-group w-100" role="group">
+                                            @if (myAssignment.Status == "Pending")
+                                            {
+                                                <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@task.Id" />
+                                                    <input type="hidden" name="status" value="InProgress" />
+                                                    <button type="submit" class="btn btn-sm btn-warning">Start</button>
+                                                </form>
+                                            }
+                                            @if (myAssignment.Status == "InProgress")
+                                            {
+                                                <form asp-action="UpdateStatus" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@task.Id" />
+                                                    <input type="hidden" name="status" value="Done" />
+                                                    <button type="submit" class="btn btn-sm btn-success">Complete</button>
+                                                </form>
+                                            }
+                                            @if (myAssignment.Status == "Done")
+                                            {
+                                                <span class="badge bg-success w-100">Completed</span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Not assigned to you</span>
+                                    }
                                 }
                             </div>
-
                         </div>
                     </div>
                 }

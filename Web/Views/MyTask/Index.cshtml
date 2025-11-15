@@ -1,6 +1,7 @@
 ﻿@model Web.Models.Task.TaskListViewModel
 @{
     ViewData["Title"] = "My Tasks";
+    var currentUserId = long.Parse(Context.Session.GetString("UserId") ?? "0");
 }
 
 <div class="container-fluid">
@@ -40,7 +41,10 @@
                         <div class="card h-100 task-card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <span class="badge bg-@GetPriorityColor(task.Priority)">@task.Priority</span>
-                                <span class="badge bg-@GetStatusColor(task.Status)">@task.Status</span>
+                                @{
+                                    var myAssignment = task.Assignments.FirstOrDefault(a => a.AssigneeId == currentUserId);
+                                }
+                                <span class="badge bg-@GetStatusColor(myAssignment?.Status ?? "Pending")">@(myAssignment?.Status ?? "Pending")</span>
                             </div>
                             <div class="card-body">
                                 <h5 class="card-title">@task.Title</h5>
@@ -62,7 +66,8 @@
                             </div>
                             <div class="card-footer">
                                 <div class="btn-group w-100" role="group">
-                                    @if (task.Status == "Pending")
+                                    
+                                    @if (myAssignment?.Status == "Pending")
                                     {
                                         <form asp-controller="MyTask" asp-action="UpdateStatus" method="post" class="d-inline">
                                             <input type="hidden" name="id" value="@task.Id" />
@@ -70,13 +75,17 @@
                                             <button type="submit" class="btn btn-sm btn-warning">Start</button>
                                         </form>
                                     }
-                                    @if (task.Status == "InProgress")
+                                    @if (myAssignment?.Status == "InProgress")
                                     {
                                         <form asp-controller="MyTask" asp-action="UpdateStatus" method="post" class="d-inline">
                                             <input type="hidden" name="id" value="@task.Id" />
                                             <input type="hidden" name="status" value="Done" />
                                             <button type="submit" class="btn btn-sm btn-success">Complete</button>
                                         </form>
+                                    }
+                                    @if (myAssignment?.Status == "Done")
+                                    {
+                                        <button class="btn btn-sm btn-secondary" disabled>Waiting for verified</button>
                                     }
                                 </div>
                             </div>
@@ -110,8 +119,10 @@
     {
         "Pending" => "secondary",
         "InProgress" => "primary",
-        "Done" => "success",
+        "Done" => "warning",
         "Verified" => "success",
         _ => "secondary"
     };
+
+
 }

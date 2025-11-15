@@ -19,5 +19,15 @@
         public DateTime UpdatedAt { get; set; }
         public List<string> AssigneeNames { get; set; } = new();
         public List<long> AssigneeIds { get; set; } = new();
+        public List<TaskAssignmentDto> Assignments { get; set; } = new(); // Thêm dòng này
+    }
+
+    public class TaskAssignmentDto
+    {
+        public long AssigneeId { get; set; }
+        public string AssigneeName { get; set; } = null!;
+        public string Status { get; set; } = "Pending";
+        public DateTime? AssignedAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
     }
 }

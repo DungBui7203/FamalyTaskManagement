@@ -37,6 +37,16 @@ namespace Web.Models.Task
         public List<string> AssigneeNames { get; set; } = new();
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public List<TaskAssignmentViewModel> Assignments { get; set; } = new(); // Di chuyển vào đây
+    }
+
+    public class TaskAssignmentViewModel
+    {
+        public long AssigneeId { get; set; }
+        public string AssigneeName { get; set; } = null!;
+        public string Status { get; set; } = "Pending";
+        public DateTime? AssignedAt { get; set; }
+        public DateTime? CompletedAt { get; set; }
     }
 
     public class TaskListViewModel
