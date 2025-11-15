@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Web.Models;
+using Web.Models.Report;
 using Web.Services;
 
 namespace Web.Controllers
@@ -14,46 +15,32 @@ namespace Web.Controllers
             _apiService = apiService;
             _httpContextAccessor = httpContextAccessor;
 
-            // TỰ ĐỘNG GẮN TOKEN TỪ SESSION VÀO HttpClient
             var token = _httpContextAccessor.HttpContext?.Session.GetString("Token");
             if (!string.IsNullOrEmpty(token))
-            {
                 _apiService.SetAuthToken(token);
-            }
         }
 
         public async Task<IActionResult> Index()
         {
-            // Kiểm tra đăng nhập
             var token = _httpContextAccessor.HttpContext?.Session.GetString("Token");
             if (string.IsNullOrEmpty(token))
-            {
                 return RedirectToAction("Login", "Auth");
-            }
 
-            // Gọi song song 2 API
-            var membersTask = _apiService.GetFamilyMembersAsync();
-            var reportTask = _apiService.GetTaskReportAsync();
+            var statsTask = _apiService.GetMemberTaskStatsAsync();
+            var overdueTask = _apiService.GetOverdueTasksAsync();
 
-            await Task.WhenAll(membersTask, reportTask);
+            await Task.WhenAll(statsTask, overdueTask);
 
-            var members = await membersTask;
-            var report = await reportTask;
+            var stats = await statsTask;
+            var overdue = await overdueTask;
 
-            // Nếu API lỗi → trả null → chuyển hướng login
-            if (members == null || report == null)
+            if (stats == null || overdue == null)
             {
                 TempData["Error"] = "Không thể tải báo cáo. Vui lòng đăng nhập lại.";
                 return RedirectToAction("Login", "Auth");
             }
 
-            var model = new ReportViewModel
-            {
-                Members = members,
-                Report = report
-            };
-
-            return View(model);
+            return View(new ReportViewModel { MemberStats = stats, OverdueGroups = overdue });
         }
     }
 }

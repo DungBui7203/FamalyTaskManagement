@@ -1,17 +1,11 @@
-﻿using Web.Models.Task;
-
-namespace Web.Models
+﻿namespace API.DTOs
 {
-    public class ReportViewModel
-    {
-        public List<UserViewModel> Members { get; set; }
-        public List<TaskReportItem> Report { get; set; }
-    }
-    public class TaskReportItem
+    public class TaskMemberStatDto
     {
         public long UserId { get; set; }
-        public string FullName { get; set; }
+        public string FullName { get; set; } = string.Empty;
         public int AssignedCount { get; set; }
+        public int PendingCount { get; set; }
         public int InProgressCount { get; set; }
         public int DoneCount { get; set; }
         public int OnTimeCount { get; set; }

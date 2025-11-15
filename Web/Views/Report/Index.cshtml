@@ -1,39 +1,337 @@
-﻿@model Web.Models.ReportViewModel
+﻿@using System.Text.Json
+@model Web.Models.Report.ReportViewModel
 @{
-    ViewData["Title"] = "Report";
+    ViewData["Title"] = "Báo Cáo Công Việc Gia Đình";
 }
-<div class="container login-container">
-    <div class="login-card w-100" style="max-width:900px;">
-        <div class="login-header">
-            <h2>Family Task Report</h2>
-            <div class="subtitle">Overview of family members' tasks</div>
-        </div>
-        <div class="login-body">
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        <th>Member</th>
-                        <th>Assigned</th>
-                        <th>In Progress</th>
-                        <th>Done</th>
-                        <th>On Time</th>
-                        <th>Late</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in Model.Report)
-                    {
-                        <tr>
-                            <td>@item.FullName</td>
-                            <td>@item.AssignedCount</td>
-                            <td>@item.InProgressCount</td>
-                            <td>@item.DoneCount</td>
-                            <td>@item.OnTimeCount</td>
-                            <td>@item.LateCount</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+
+<div class="report-container">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-11">
+
+                @* Thông báo lỗi *@
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show shadow-sm mb-4">
+                        <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <div class="report-card shadow-lg">
+                    @* Header *@
+                    <div class="report-header text-white text-center py-4">
+                        <h2 class="mb-2"><i class="fas fa-chart-line me-3"></i>BÁO CÁO CÔNG VIỆC GIA ĐÌNH</h2>
+                        <p class="mb-0 opacity-75">Thống kê chi tiết nhiệm vụ theo thành viên</p>
+                    </div>
+
+                    <div class="card-body p-5">
+
+                        @* 1. Biểu đồ: Thành viên nhiều nhiệm vụ nhất *@
+                        <div class="chart-section mb-5">
+                            <h5 class="chart-title"><i class="fas fa-medal text-warning me-2"></i>Thành viên có nhiều nhiệm vụ nhất</h5>
+                            <div class="chart-wrapper bg-light p-3 rounded-3 shadow-sm">
+                                <canvas id="mostTasksChart" height="120"></canvas>
+                            </div>
+                        </div>
+
+                        @* 2. Biểu đồ: Trạng thái nhiệm vụ *@
+                        <div class="chart-section mb-5">
+                            <h5 class="chart-title"><i class="fas fa-pie-chart text-info me-2"></i>Trạng thái nhiệm vụ toàn gia đình</h5>
+                            <div class="chart-wrapper bg-light p-3 rounded-3 shadow-sm d-flex justify-content-center">
+                                <canvas id="taskStatusChart" width="300" height="300"></canvas>
+                            </div>
+                        </div>
+
+                        @* 3. Bảng chi tiết *@
+                        <div class="table-section mb-5">
+                            <h5 class="chart-title mb-3"><i class="fas fa-table text-success me-2"></i>Chi tiết theo thành viên</h5>
+                            <div class="table-responsive">
+                                <table class="table table-modern align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Thành viên</th>
+                                            <th class="text-center">Tổng</th>
+                                            <th class="text-center text-warning">Chờ</th>
+                                            <th class="text-center text-primary">Đang làm</th>
+                                            <th class="text-center text-success">Hoàn thành</th>
+                                            <th class="text-center text-info">Đúng hạn</th>
+                                            <th class="text-center text-danger">Trễ hạn</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (!Model.MemberStats.Any())
+                                        {
+                                            <tr>
+                                                <td colspan="7" class="text-center py-4 text-muted">
+                                                    <i class="fas fa-inbox me-2"></i>Chưa có dữ liệu thống kê
+                                                </td>
+                                            </tr>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var stat in Model.MemberStats)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar-sm me-3 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center">
+                                                                @(string.IsNullOrEmpty(stat.FullName) ? "?" : stat.FullName[0].ToString().ToUpper())
+                                                            </div>
+                                                            <strong>@stat.FullName</strong>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center fw-bold">@stat.AssignedCount</td>
+                                                    <td class="text-center text-warning fw-bold">@stat.PendingCount</td>
+                                                    <td class="text-center text-primary fw-bold">@stat.InProgressCount</td>
+                                                    <td class="text-center text-success fw-bold">@stat.DoneCount</td>
+                                                    <td class="text-center text-info fw-bold">@stat.OnTimeCount</td>
+                                                    <td class="text-center text-danger fw-bold">@stat.LateCount</td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        @* 4. Nhiệm vụ quá hạn *@
+                        <div class="overdue-section">
+                            <h5 class="chart-title mb-3"><i class="fas fa-bell text-danger me-2"></i>Nhiệm vụ quá hạn</h5>
+                            @if (!Model.OverdueGroups.Any())
+                            {
+                                <div class="alert alert-success rounded-3 p-3 d-flex align-items-center">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <strong>Chúc mừng!</strong> Không có nhiệm vụ nào quá hạn.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="accordion" id="overdueAccordion">
+                                    @foreach (var group in Model.OverdueGroups)
+                                    {
+                                        var collapseId = $"overdue-{group.AssigneeId}";
+                                        <div class="accordion-item border-start border-danger border-4">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId">
+                                                    <i class="fas fa-user-clock text-danger me-2"></i>
+                                                    @group.AssigneeName
+                                                    <span class="badge bg-danger ms-2">@group.TotalOverdue</span>
+                                                </button>
+                                            </h2>
+                                            <div id="@collapseId" class="accordion-collapse collapse">
+                                                <div class="accordion-body">
+                                                    <ul class="list-group list-group-flush">
+                                                        @foreach (var task in group.OverdueTasks)
+                                                        {
+                                                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                                                <span><i class="fas fa-exclamation-triangle text-warning me-2"></i>@task.Title</span>
+                                                                <span class="badge bg-danger rounded-pill">
+                                                                    Quá @task.DaysOverdue ngày
+                                                                </span>
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        @* Nút quay lại *@
+                        <div class="text-center mt-5">
+                            <a asp-controller="Task" asp-action="Index" class="btn btn-outline-primary px-4">
+                                <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<style>
+    :root {
+        --primary: #667eea;
+        --secondary: #764ba2;
+        --success: #28a745;
+        --warning: #ffc107;
+        --danger: #dc3545;
+        --info: #17a2b8;
+        --light: #f8f9fa;
+        --dark: #343a40;
+        --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --shadow: 0 10px 30px rgba(0,0,0,0.1);
+        --radius: 1.2rem;
+    }
+
+    .report-container {
+        min-height: 100vh;
+        background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    .report-card {
+        border-radius: var(--radius);
+        overflow: hidden;
+        background: white;
+    }
+
+    .report-header {
+        background: var(--gradient);
+        padding: 2.5rem 1rem;
+    }
+
+        .report-header h2 {
+            font-weight: 700;
+            font-size: 1.8rem;
+        }
+
+    .chart-section, .table-section, .overdue-section {
+        margin-bottom: 2.5rem;
+    }
+
+    .chart-title {
+        color: var(--primary);
+        font-weight: 600;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .chart-wrapper {
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    .table-modern {
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+    }
+
+        .table-modern thead th {
+            background: #e3f2fd;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+        }
+
+        .table-modern tbody tr {
+            background: #f8f9fa;
+            transition: all 0.2s;
+        }
+
+            .table-modern tbody tr:hover {
+                background: #e3f2fd;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+
+    .avatar-sm {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+
+    .accordion-item {
+        border: none;
+        border-radius: 0.75rem;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+    }
+
+    .accordion-button {
+        background: #fdfdfd;
+        font-weight: 600;
+    }
+
+        .accordion-button:not(.collapsed) {
+            background: var(--gradient);
+            color: white;
+        }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const memberStats = @Html.Raw(JsonSerializer.Serialize(Model.MemberStats));
+
+        // Nếu không có dữ liệu
+        if (!memberStats || memberStats.length === 0) {
+            document.querySelectorAll('canvas').forEach(canvas => {
+                const ctx = canvas.getContext('2d');
+                ctx.font = '16px Arial';
+                ctx.fillStyle = '#999';
+                ctx.textAlign = 'center';
+                ctx.fillText('Chưa có dữ liệu', canvas.width / 2, canvas.height / 2);
+            });
+            return;
+        }
+
+        // === BAR CHART: Thành viên nhiều task nhất ===
+        const mostTasksCtx = document.getElementById('mostTasksChart').getContext('2d');
+        new Chart(mostTasksCtx, {
+            type: 'bar',
+            data: {
+                labels: memberStats.map(s => s.fullName || 'Ẩn danh'),
+                datasets: [{
+                    label: 'Số nhiệm vụ',
+                    data: memberStats.map(s => s.assignedCount),
+                    backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                    borderColor: '#764ba2',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => `${ctx.raw} nhiệm vụ` } }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, font: { size: 12 } },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // === PIE CHART: Trạng thái task ===
+        const totalPending = memberStats.reduce((s, x) => s + x.pendingCount, 0);
+        const totalInProgress = memberStats.reduce((s, x) => s + x.inProgressCount, 0);
+        const totalDone = memberStats.reduce((s, x) => s + x.doneCount, 0);
+
+        const taskStatusCtx = document.getElementById('taskStatusChart').getContext('2d');
+        new Chart(taskStatusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Chờ xử lý', 'Đang thực hiện', 'Đã hoàn thành'],
+                datasets: [{
+                    data: [totalPending, totalInProgress, totalDone],
+                    backgroundColor: ['#ffc107', '#fd7e14', '#28a745'],
+                    borderColor: '#fff',
+                    borderWidth: 3,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom', labels: { padding: 20, font: { size: 13 } } },
+                    tooltip: { callbacks: { label: ctx => `${ctx.label}: ${ctx.raw}` } }
+                },
+                cutout: '65%'
+            }
+        });
+    });
+</script>
