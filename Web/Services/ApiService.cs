@@ -2,6 +2,7 @@
 using System.Text.Json;
 using Web.Models;
 using Web.Models.Profile;
+using Web.Models.Report;
 using Web.Models.Task;
 using Web.Models.User;
 
@@ -166,16 +167,16 @@ namespace Web.Services
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<List<TaskReportItem>?> GetTaskReportAsync()
-        {
-            var response = await _httpClient.GetAsync("/api/report");
-            if (response.IsSuccessStatusCode)
-            {
-                var json = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<TaskReportItem>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            }
-            return null;
-        }
+        //public async Task<List<TaskReportItem>?> GetTaskReportAsync()
+        //{
+        //    var response = await _httpClient.GetAsync("/api/report");
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        var json = await response.Content.ReadAsStringAsync();
+        //        return JsonSerializer.Deserialize<List<TaskReportItem>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        //    }
+        //    return null;
+        //}
         public async Task<bool> UpdateProfileAsync(ProfileUserViewModel model)
         {
             var dto = new { model.FullName, model.Email };
@@ -261,6 +262,27 @@ namespace Web.Services
                 });
             }
 
+            return null;
+        }
+        public async Task<List<TaskMemberStat>?> GetMemberTaskStatsAsync()
+        {
+            var response = await _httpClient.GetAsync("/api/reports/member-stats");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<List<TaskMemberStat>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            return null;
+        }
+
+        public async Task<List<OverdueTaskGroup>?> GetOverdueTasksAsync()
+        {
+            var response = await _httpClient.GetAsync("/api/reports/overdue");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<List<OverdueTaskGroup>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
             return null;
         }
 
