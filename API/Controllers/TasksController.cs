@@ -94,7 +94,13 @@ namespace API.Controllers
                 return BadRequest(ModelState);
 
             var familyId = GetCurrentFamilyId();
-            var task = await _taskService.UpdateTaskStatusAsync(id, dto.Status, familyId);
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+
+            // Parent có thể cập nhật toàn bộ task, Member chỉ cập nhật assignment của mình
+            var currentUserId = userRole == "Parent" ? (long?)null : userId;
+
+            var task = await _taskService.UpdateTaskStatusAsync(id, dto.Status, familyId, currentUserId);
 
             if (task == null)
                 return NotFound();

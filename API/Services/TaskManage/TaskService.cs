@@ -4,6 +4,7 @@ using API.Models;
 using API.Services;
 using API.Services.TaskManage;
 using Microsoft.EntityFrameworkCore;
+using TaskModel = API.Models.Task;
 
 namespace API.Services.TaskManage
 {
@@ -74,6 +75,7 @@ namespace API.Services.TaskManage
                 {
                     TaskId = task.Id,
                     AssigneeId = assigneeId,
+                    Status = "Pending", // Thêm dòng này
                     AssignedAt = DateTime.UtcNow
                 }).ToList();
 
@@ -111,16 +113,59 @@ namespace API.Services.TaskManage
             return true;
         }
 
-        public async Task<TaskDto?> UpdateTaskStatusAsync(long id, string status, long familyId)
+        public async Task<TaskDto?> UpdateTaskStatusAsync(long taskId, string status, long familyId, long? userId = null)
         {
-            var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id && t.FamilyId == familyId);
-            if (task == null) return null;
+            if (userId.HasValue)
+            {
+                // Member cập nhật assignment của mình
+                var assignment = await _context.TaskAssignments
+                    .FirstOrDefaultAsync(ta => ta.TaskId == taskId && ta.AssigneeId == userId.Value);
 
-            task.Status = status;
+                if (assignment == null) return null;
+
+                assignment.Status = status;
+                if (status == "Done")
+                    assignment.CompletedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                await UpdateTaskOverallStatus(taskId);
+            }
+            else
+            {
+                // Parent cập nhật toàn bộ task
+                var task = await _context.Tasks.FirstOrDefaultAsync(t => t.Id == taskId && t.FamilyId == familyId);
+                if (task == null) return null;
+
+                task.Status = status;
+                task.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+            }
+
+            return await GetTaskByIdAsync(taskId, familyId);
+        }
+
+        private async System.Threading.Tasks.Task UpdateTaskOverallStatus(long taskId)
+        {
+            var task = await _context.Tasks
+                .Include(t => t.TaskAssignments)
+                .FirstOrDefaultAsync(t => t.Id == taskId);
+
+            if (task == null) return;
+
+            var assignments = task.TaskAssignments.ToList();
+            if (!assignments.Any()) return;
+
+            if (assignments.All(a => a.Status == "Done"))
+                task.Status = "Done";
+            else if (assignments.Any(a => a.Status == "InProgress"))
+                task.Status = "InProgress";
+            else if (assignments.Any(a => a.Status == "Done"))
+                task.Status = "InProgress";
+            else
+                task.Status = "Pending";
+
             task.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-
-            return await GetTaskByIdAsync(id, familyId);
         }
 
         public async Task<TaskDto?> AssignTaskAsync(long id, List<long> assigneeIds, long familyId)
@@ -137,6 +182,7 @@ namespace API.Services.TaskManage
             {
                 TaskId = id,
                 AssigneeId = assigneeId,
+                Status = "Pending", // Thêm dòng này
                 AssignedAt = DateTime.UtcNow
             }).ToList();
 
@@ -180,7 +226,15 @@ namespace API.Services.TaskManage
                 CreatedAt = task.CreatedAt ?? DateTime.MinValue,
                 UpdatedAt = task.UpdatedAt ?? DateTime.MinValue,
                 AssigneeNames = task.TaskAssignments.Select(ta => ta.Assignee.FullName).ToList(),
-                AssigneeIds = task.TaskAssignments.Select(ta => ta.AssigneeId).ToList()
+                AssigneeIds = task.TaskAssignments.Select(ta => ta.AssigneeId).ToList(),
+                Assignments = task.TaskAssignments.Select(ta => new TaskAssignmentDto // Thêm phần này
+                {
+                    AssigneeId = ta.AssigneeId,
+                    AssigneeName = ta.Assignee.FullName,
+                    Status = ta.Status,
+                    AssignedAt = ta.AssignedAt,
+                    CompletedAt = ta.CompletedAt
+                }).ToList()
             };
         }
 
